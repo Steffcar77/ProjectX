@@ -1,0 +1,245 @@
+---
+title: "Tesla ARIMA Analysis"
+author: "Project X"
+date: "2024-12-10"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r IMPORTING LIBRARIES}
+
+ library(forecast)
+ library(readr)
+ library(ggplot2)
+ library(dplyr)
+ library(tseries)
+ library(quantmod)
+ library(readr)
+ 
+ #############        DOWNLOADING OF DATA FROM YAHOO FINANCE 
+ 
+# TICKER AND DATES DEFINITION
+ticker <- "TSLA"
+start_date <- as.Date("2022-12-05") # Data di inizio specifica
+end_date <- as.Date("2024-12-05") # Data di fine specifica
+
+# DOWNLOADING AND CHECKING FOR ERRORS
+tryCatch({
+  getSymbols(ticker, from = start_date, to = end_date, src = "yahoo")
+}, error = function(e) {
+  message(paste("Errore nel download dei dati:", e))
+  return(NULL)
+})
+
+# CHECKING DOWNLOAD 
+if (!exists("TSLA")) {
+  stop("Download dei dati fallito. Controllare la connessione e il ticker.")
+}
+
+# DATAFRAME CONVERSION AND COLUMN NAMING
+tesla_df <- data.frame(
+  Date = as.Date(index(TSLA)),
+  Open = TSLA[, 1],
+  High = TSLA[, 2],
+  Low = TSLA[, 3],
+  Close = TSLA[, 4],
+  Volume = TSLA[, 5],
+  Adjusted = TSLA[, 6]
+)
+
+##################      FORMATTING DATA INTO CSV FILE 
+
+# SAVING AS CSV FILE
+tryCatch({
+  write_csv(tesla_df, "tesla_closingprice_yfinance.csv")
+  message("Dati salvati correttamente in tesla_data.csv")
+}, error = function(e) {
+  message(paste("Errore nella scrittura del file CSV:", e))
+})
+
+```
+
+```{r TIMESERIES}
+ # DATASET LOADING
+data <- read.csv(file = "tesla_closingprice_yfinance.csv", sep=";")
+data <- read_csv("tesla_closingprice_yfinance.csv")
+
+# Selecting 'Close' column
+data <- data %>% select(Date, TSLA.Close)
+
+
+# Timeseries Creation
+tseries_o <- ts(data$TSLA.Close, frequency =250)
+
+# Plotting the time series
+plot <- autoplot(tseries_o) +
+  geom_line(color = "blue", size = 1) +
+  labs(title = "Tesla Closing Price",
+       x = "Time",
+       y = "Closing Price ($)") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),
+    axis.title = element_text(size = 12),
+    axis.text = element_text(size = 10),
+    panel.grid.minor = element_blank()
+  )
+
+# Display the plot
+print(plot)
+
+# decomposition
+scomp <-  decompose(tseries_o)
+plot(scomp)
+
+```
+
+```{r ADF TEST}
+# ADF test to CHECK STATIONARITY
+adf_test <- adf.test(tseries_o, alternative = "stationary")
+print(adf_test)
+# The original time series is not stationary by itself. There's need of differentiation
+# d = 1 
+tseries_diff <- diff(tseries_o, differences = 1)
+
+# ADF test to CHECK STATIONARITY
+adf_test <- adf.test(tseries_diff, alternative = "stationary")
+print(adf_test)
+
+# Now the data is stationary (p-value = 0.01)
+
+# Differentiated Data Plot
+autoplot(tseries_diff, main = "Differenced Tesla Stock Closing Prices (d=1)", xlab = "Time", ylab = "Differenced Closing Price") + theme_bw()
+
+# Plot of ACF and PACF
+ggAcf(tseries_diff, lag.max = 250) + theme_bw() + ylab("ACF") + labs(title = "ACF of Differentiated Data")
+ggPacf(tseries_diff, lag.max = 250) + theme_bw() + ylab("PACF") + labs(title = "PACF of Differentiated Data")
+
+```
+
+```{r  EVALUATING BEST ARIMA MODEL THROUGH MINIC APPROACH}
+# Evaluating relevant ARIMA models through the MINIC Approach of the AICc 
+
+ARIMA_0_1_0 = Arima(tseries_o, order = c(0, 1, 0))
+ARIMA_0_1_1 = Arima(tseries_o, order = c(0, 1, 1))
+ARIMA_1_1_0 = Arima(tseries_o, order = c(1, 1, 0))
+ARIMA_1_1_1 = Arima(tseries_o, order = c(1, 1, 1))
+ARIMA_2_1_0 = Arima(tseries_o, order = c(2, 1, 0))
+ARIMA_2_1_1 = Arima(tseries_o, order = c(2, 1, 1))
+ARIMA_0_1_2 = Arima(tseries_o, order = c(0, 1, 2))
+
+
+# List of all ARIMA models
+models <- list(ARIMA_0_1_0,ARIMA_2_1_1, ARIMA_0_1_2, ARIMA_1_1_0, ARIMA_2_1_0, ARIMA_0_1_1,ARIMA_1_1_1)
+results <- sapply(models, function(model) {
+  c(AIC = AIC(model), BIC = BIC(model))
+})
+
+# Model names for easy reference
+model_names <- c("ARIMA(0,1,0)", "ARIMA(2,1,1)", "ARIMA(0,1,2)", "ARIMA(1,1,0)", "ARIMA(2,1,0)", "ARIMA(0,1,1)", "ARIMA(1,1,1)") 
+
+# AICc Function definition to calculate AICc
+calculate_aicc <- function(model, T) {
+  p <- length(model$model$phi)  # Number of AR terms
+  q <- length(model$model$theta)  # Number of MA terms
+  k <- 1  # Assuming a constant term is included
+  
+  aic <- AIC(model)
+  aicc <- aic + (2 * (p + q + k + 1) * (p + q + k + 2)) / (T - p - q - k - 2)
+  
+  return(c(AIC = aic, AICc = aicc))
+}
+
+# Calculate AIC and AICc for each model
+T <- length(tseries_o)  # Total sample size
+results <- sapply(models, calculate_aicc, T = T)
+
+# Create updated comparison dataframe
+comparison_df <- data.frame(
+  Model = model_names,
+  AIC = results["AIC", ],
+  AICc = results["AICc", ]
+)
+# Displaying the comparison table
+knitr::kable(comparison_df, caption = "Model Comparison by AIC and AICc")
+
+# Selecting the best model based on AICc adding drift
+best_model <- Arima(tseries_o, order = c(0, 1, 0), include.drift = TRUE)
+summary(best_model)
+```
+
+```{r BEST MODEL FORECAST  }   
+# Fit of the best model
+fitted_values <- fitted(best_model)
+fit_data <- data.frame(Date = time(tseries_o), 
+                       Actual = as.numeric(tseries_o), 
+                       Fitted = as.numeric(fitted_values))
+# Plotting Arima Model Fit
+ggplot() +
+  geom_line(data = fit_data, aes(x = Date, y = Actual, color = "Original Values"), size = 1) +
+  geom_line(data = fit_data, aes(x = Date, y = Fitted, color = "Fitted Values"), size = 1, linetype = "dashed") +
+  labs(title = "ARIMA Model Fit", x = "Time", y = "Value") +
+  theme_minimal() +
+  scale_color_manual(values = c("Original Values" = "blue", "Fitted Values" = "green")) +
+  theme(
+    legend.title = element_blank(),
+    legend.position = "bottom",
+    plot.title = element_text(hjust = 0.5, size = 14)  # Center title
+  )
+
+
+# Forecast of the best model
+forecast_horizon <- 20
+forecast_object <- forecast(best_model, h = forecast_horizon)
+autoplot(forecast_object)
+
+# Checking for residuals
+checkresiduals(best_model)
+
+```
+
+```{r COMPARISON WITH AUTO.ARIMA()}
+
+AUTOARIMA_model <- auto.arima(tseries_o, ic = 'aicc', stepwise = FALSE, approximation = FALSE)
+summary(AUTOARIMA_model)
+
+
+# Our best model is parametrically identical as the auto.arima one
+# Comparison between and auto.arima() and our best Arima model
+
+n <- length(tseries_o)
+n_train <- floor(0.8 * n)
+train_set <- window(tseries_o, end = time(tseries_o)[n_train])
+test_set <- window(tseries_o, start = time(tseries_o)[n_train + 1])
+
+
+# model training on training set
+best_model_train <- Arima(train_set, order = c(0,1,0), include.drift = TRUE)  # Assumo che il tuo modello originale fosse ARIMA(0,1,0) con drift
+AUTOARIMA_model_train <- auto.arima(train_set)
+
+# Forecasting of both models on training data
+h <- length(test_set)
+forecast_best <- forecast(best_model_train, h = h)
+forecast_auto <- forecast(AUTOARIMA_model_train, h = h)
+
+# comparison plot
+ggplot() +
+  autolayer(tseries_o, series = "Original Data") +
+  autolayer(train_set, series = "Training set") +
+  autolayer(forecast_best, series = "Best Model", PI = FALSE) +
+  autolayer(forecast_auto, series = "Auto ARIMA", PI = FALSE) +
+  geom_vline(xintercept = time(tseries_o)[n_train], linetype = "dashed", color = "gray50") +
+  annotate("text", x = time(tseries_o)[n_train], y = min(tseries_o), label = "End of Training", hjust = -0.1, vjust = -0.5) +
+  ggtitle("Forecast comparison: Best Model vs Auto ARIMA") +
+  xlab("Time") +
+  ylab("Closing Price") +
+  theme_minimal() +
+  scale_color_manual(values = c("Original Data" = "black", 
+                                "Training set" = "darkgray",
+                                "Best Model" = "blue", 
+                                "Auto ARIMA" = "red")) +
+  theme(legend.position = "bottom")
+```
