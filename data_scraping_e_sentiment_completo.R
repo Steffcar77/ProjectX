@@ -135,21 +135,18 @@ library(lubridate)
 library(syuzhet)
 
 my_stopwords <- c("a", "an", "the",        # Articoli
-  "and", "but", "or", "nor", "for", "yet", "so", # Congiunzioni
-  "in", "on", "at", "by", "to", "from", "with", "about", "as", "of", "for", "between", "under", "over", # Preposizioni
-  "he", "his", "she", "her", "it", "its", "they", "them", "their", "us", "we", "you", "your", "yours", "i", "me", "my", "mine", # Pronomi
-  "is", "are", "am", "was", "were", "be", "been", "being", # to be
-  "have", "has", "had", "having", # to have
-  "does", "do", "did", "doing",  # altri verbi ausiliari
-  "this", "that", "these", "those", "which", "who", "whom", "whose",  # Determinativi e pronomi relativi
-  "there", "here", "where", "how", "why", "what", "when", "who", # Avverbi interrogativi
-  "www", "jpg", "ta", "than", "too", "not", "will", "tsla", "com", "all", "just", "xb", "reddit", "redd", "webp", "pjpg", "https", "amp", "if", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z")
+                  "and", "but", "or", "nor", "for", "yet", "so", # Congiunzioni
+                  "in", "on", "at", "by", "to", "from", "with", "about", "as", "of", "for", "between", "under", "over", # Preposizioni
+                  "he", "his", "she", "her", "it", "its", "they", "them", "their", "us", "we", "you", "your", "yours", "i", "me", "my", "mine", # Pronomi
+                  "is", "are", "am", "was", "were", "be", "been", "being", # to be
+                  "have", "has", "had", "having", # to have
+                  "does", "do", "did", "doing",  # altri verbi ausiliari
+                  "this", "that", "these", "those", "which", "who", "whom", "whose",  # Determinativi e pronomi relativi
+                  "there", "here", "where", "how", "why", "what", "when", "who", # Avverbi interrogativi
+                  "www", "jpg", "ta", "than", "too", "not", "will", "tsla", "com", "all", "just", "xb", "reddit", "redd", "webp", "pjpg", "https", "amp", "if", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z")
 
-#file_path <- file.choose()
-#file_path <- "/Users/francescosantarelli/Documents/management_tools/TSLA_posts2.xlsx"
-#tesla_posts_selftext <- read_excel(file_path, sheet = "Sheet1")
 tesla_posts_selftext <- read_excel("reddit_posts.xlsx")
-                      
+
 tesla_posts_selftext <- tesla_posts_selftext %>%
   filter(!is.na(Selftext), Selftext != "")
 
@@ -200,7 +197,7 @@ top_15_bigrams_selftext%>%
 
 #bigram net
 biwords_df_selftext <- tesla_posts_selftext %>% select(Selftext) %>% unnest_tokens(output = bigram, input = Selftext, token = "ngrams", n = 2)
-                                                                         
+
 bigram_net_selftext <- biwords_df_selftext %>%
   separate(bigram,c( "word1", "word2"), sep = " ") %>%
   filter(!is.na(word1) & !is.na(word2)) %>% # Filtra bigrammi con NA
@@ -210,7 +207,7 @@ bigram_net_selftext <- biwords_df_selftext %>%
 bigram_net_selftext
 
 bigram_igraph_selftext <- bigram_net_selftext %>%
-  filter(n>75) %>% 
+  filter(n>2) %>% 
   graph_from_data_frame()
 bigram_igraph_selftext
 
@@ -223,7 +220,7 @@ biplot_text_a_selftext = ggraph(bigram_igraph_selftext, layout = "fr") +
   geom_node_text(aes(label = name), vjust = 1, hjust = 1, size = 3) +
   labs(title = "Selftext Bigrams Net") +
   theme_void() 
-  
+
 
 biplot_text_a_selftext
 
@@ -285,7 +282,7 @@ wordcloud2(top_15_words_selftext, size = 0.5, color = "random-light", background
 ############################################################################################################################
 #analisi dei titoli
 
-tesla_posts_title <- read_excel(file_path, sheet = "Sheet1")
+tesla_posts_title <- read_excel("reddit_posts.xlsx")
 
 tesla_posts_title <- tesla_posts_title %>%
   filter(!is.na(Title), Title != "")
@@ -338,7 +335,7 @@ top_15_bigrams_title %>%
 #bigram net_title
 
 biwords_df_title <- tesla_posts_title %>% select(Title) %>% unnest_tokens(output = bigram, input = Title, token = "ngrams", n = 2)
-                                                                                   
+
 bigram_net_title <- biwords_df_title %>%
   separate(bigram,c( "word1", "word2"), sep = " ") %>%
   filter(!is.na(word1) & !is.na(word2)) %>% # Filtra bigrammi con NA
@@ -348,7 +345,7 @@ bigram_net_title <- biwords_df_title %>%
 bigram_net_title
 
 bigram_igraph_title <- bigram_net_title %>%
-  filter(n>19) %>% 
+  filter(n>2) %>% 
   graph_from_data_frame()
 bigram_igraph_title
 
@@ -421,7 +418,7 @@ wordcloud2(top_15_words_title, size = 0.5, color = "random-light", backgroundCol
 ############################################################################################################################
 ############################################################################################################################
 
-tesla_posts_combined <- read_excel(file_path, sheet = "Sheet1")
+tesla_posts_combined <- read_excel("reddit_posts.xlsx")
 
 tesla_posts_combined <- tesla_posts_combined %>%
   filter(!is.na(Selftext), Selftext != "")
@@ -475,7 +472,7 @@ top_15_bigrams_CombinedText%>%
 
 #bigram net
 biwords_df_combined <- tesla_posts_combined %>% select(CombinedText) %>% unnest_tokens(output = bigram, input = CombinedText, token = "ngrams", n = 2)
-                                                                          
+
 bigram_net_combined <- biwords_df_combined %>%
   separate(bigram,c( "word1", "word2"), sep = " ") %>%
   filter(!is.na(word1) & !is.na(word2)) %>% # Filtra bigrammi con NA
@@ -485,7 +482,7 @@ bigram_net_combined <- biwords_df_combined %>%
 bigram_net_combined
 
 bigram_igraph_combined <- bigram_net_combined %>%
-  filter(n>40) %>% 
+  filter(n>2) %>% 
   graph_from_data_frame()
 bigram_igraph_combined
 
@@ -557,7 +554,7 @@ wordcloud2(top_15_words_CombinedText, size = 0.5, color = "random-dark", backgro
 ############################################################################################################################
 ############################################################################################################################
 
-tesla_posts_temporal <- readxl::read_excel(file_path)
+tesla_posts_temporal <- read_excel("reddit_posts.xlsx")
 
 # Fusione delle colonne Title e Selftext
 tesla_posts_temporal <- tesla_posts_temporal %>%
@@ -588,7 +585,7 @@ ggplot(sentiment_over_time, aes(x = Date, y = avg_sentiment)) +
        y = "Sentiment Medio") + theme_minimal()
 
 #andamento del sentiment diviso in positivo e negativo
-tesla_posts_temporal <- readxl::read_excel(file_path) %>%
+tesla_posts_temporal <- read_excel("reddit_posts.xlsx") %>%
   mutate(Content = paste(Title, Selftext, sep = " ")) %>%
   select(Content, Created_UTC) %>%
   filter(!is.na(Content), !is.na(Created_UTC))
@@ -604,7 +601,7 @@ tesla_posts_temporal <- tesla_posts_temporal %>%
 sentiment_over_time <- tesla_posts_temporal %>%
   group_by(Date) %>%
   summarise(avg_positive = mean(sentiment_positive, na.rm = TRUE),
-    avg_negative = mean(sentiment_negative, na.rm = TRUE))
+            avg_negative = mean(sentiment_negative, na.rm = TRUE))
 
 # Creazione del grafico
 ggplot(sentiment_over_time) +
@@ -613,6 +610,6 @@ ggplot(sentiment_over_time) +
   scale_color_manual(values = c("Positive Sentiment" = "blue", "Negative Sentiment" = "red")) +
   #coord_cartesian(ylim = c(0, 20)) + 
   labs(title = "Temporal Trend of Positive and Negative Sentiment",
-    x = "Date", y = "Average Sentiment", color = "" ) + theme_minimal()
+       x = "Date", y = "Average Sentiment", color = "" ) + theme_minimal()
 
 #end
