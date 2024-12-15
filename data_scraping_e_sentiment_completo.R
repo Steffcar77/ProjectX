@@ -146,9 +146,10 @@ my_stopwords <- c("a", "an", "the",        # Articoli
   "www", "jpg", "ta", "than", "too", "not", "will", "tsla", "com", "all", "just", "xb", "reddit", "redd", "webp", "pjpg", "https", "amp", "if", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z")
 
 #file_path <- file.choose()
-file_path <- "/Users/francescosantarelli/Documents/management_tools/TSLA_posts2.xlsx"
-tesla_posts_selftext <- read_excel(file_path, sheet = "Sheet1")
-
+#file_path <- "/Users/francescosantarelli/Documents/management_tools/TSLA_posts2.xlsx"
+#tesla_posts_selftext <- read_excel(file_path, sheet = "Sheet1")
+tesla_posts_selftext <- read_excel("reddit_posts.xlsx")
+                      
 tesla_posts_selftext <- tesla_posts_selftext %>%
   filter(!is.na(Selftext), Selftext != "")
 
