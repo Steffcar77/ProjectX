@@ -135,15 +135,15 @@ library(lubridate)
 library(syuzhet)
 
 my_stopwords <- c("a", "an", "the",        # Articoli
-                  "and", "but", "or", "nor", "for", "yet", "so", # Congiunzioni
-                  "in", "on", "at", "by", "to", "from", "with", "about", "as", "of", "for", "between", "under", "over", # Preposizioni
-                  "he", "his", "she", "her", "it", "its", "they", "them", "their", "us", "we", "you", "your", "yours", "i", "me", "my", "mine", # Pronomi
-                  "is", "are", "am", "was", "were", "be", "been", "being", # to be
-                  "have", "has", "had", "having", # to have
-                  "does", "do", "did", "doing",  # altri verbi ausiliari
-                  "this", "that", "these", "those", "which", "who", "whom", "whose",  # Determinativi e pronomi relativi
-                  "there", "here", "where", "how", "why", "what", "when", "who", # Avverbi interrogativi
-                  "www", "jpg", "ta", "than", "too", "not", "will", "tsla", "com", "all", "just", "xb", "reddit", "redd", "webp", "pjpg", "https", "amp", "if", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z")
+  "and", "but", "or", "nor", "for", "yet", "so", # Congiunzioni
+  "in", "on", "at", "by", "to", "from", "with", "about", "as", "of", "for", "between", "under", "over", # Preposizioni
+  "he", "his", "she", "her", "it", "its", "they", "them", "their", "us", "we", "you", "your", "yours", "i", "me", "my", "mine", # Pronomi
+  "is", "are", "am", "was", "were", "be", "been", "being", # to be
+  "have", "has", "had", "having", # to have
+  "does", "do", "did", "doing",  # altri verbi ausiliari
+  "this", "that", "these", "those", "which", "who", "whom", "whose",  # Determinativi e pronomi relativi
+  "there", "here", "where", "how", "why", "what", "when", "who", # Avverbi interrogativi
+  "www", "jpg", "ta", "than", "too", "not", "will", "tsla", "com", "all", "just", "xb", "reddit", "redd", "webp", "pjpg", "https", "amp", "if", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z")
 
 #file_path <- file.choose()
 file_path <- "/Users/francescosantarelli/Documents/management_tools/TSLA_posts2.xlsx"
@@ -199,7 +199,7 @@ top_15_bigrams_selftext%>%
 
 #bigram net
 biwords_df_selftext <- tesla_posts_selftext %>% select(Selftext) %>% unnest_tokens(output = bigram, input = Selftext, token = "ngrams", n = 2)
-
+                                                                         
 bigram_net_selftext <- biwords_df_selftext %>%
   separate(bigram,c( "word1", "word2"), sep = " ") %>%
   filter(!is.na(word1) & !is.na(word2)) %>% # Filtra bigrammi con NA
@@ -218,9 +218,11 @@ set.seed(7)
 biplot_text_a_selftext = ggraph(bigram_igraph_selftext, layout = "fr") +
   geom_edge_link(aes(edge_alpha = n), show.legend = FALSE,
                  arrow = a_selftext, end_cap = circle(.07, 'inches')) +
-  geom_node_point(color = "#F06869", size = 5) +
+  geom_node_point(color = "green", size = 5) +
   geom_node_text(aes(label = name), vjust = 1, hjust = 1, size = 3) +
-  theme_void()
+  labs(title = "Selftext Bigrams Net") +
+  theme_void() 
+  
 
 biplot_text_a_selftext
 
@@ -275,7 +277,7 @@ sentiment_nrc_selftext %>%
        y = "Count") +
   theme_minimal()
 
-wordcloud2(top_15_words_selftext, size = 0.5, color = "random-light", backgroundColor = "black")
+wordcloud2(top_15_words_selftext, size = 0.5, color = "random-light", backgroundColor = "white")
 
 ############################################################################################################################
 ############################################################################################################################
@@ -335,7 +337,7 @@ top_15_bigrams_title %>%
 #bigram net_title
 
 biwords_df_title <- tesla_posts_title %>% select(Title) %>% unnest_tokens(output = bigram, input = Title, token = "ngrams", n = 2)
-
+                                                                                   
 bigram_net_title <- biwords_df_title %>%
   separate(bigram,c( "word1", "word2"), sep = " ") %>%
   filter(!is.na(word1) & !is.na(word2)) %>% # Filtra bigrammi con NA
@@ -345,7 +347,7 @@ bigram_net_title <- biwords_df_title %>%
 bigram_net_title
 
 bigram_igraph_title <- bigram_net_title %>%
-  filter(n>25) %>% 
+  filter(n>19) %>% 
   graph_from_data_frame()
 bigram_igraph_title
 
@@ -354,7 +356,8 @@ set.seed(7)
 biplot_text_a_title = ggraph(bigram_igraph_title, layout = "fr") +
   geom_edge_link(aes(edge_alpha = n), show.legend = FALSE,
                  arrow = a_title, end_cap = circle(.07, 'inches')) +
-  geom_node_point(color = "#F06869", size = 5) +
+  geom_node_point(color = "red", size = 5) +
+  labs(title = "Title Bigrams Net") +
   geom_node_text(aes(label = name), vjust = 1, hjust = 1, size = 3) +
   theme_void()
 
@@ -411,7 +414,7 @@ sentiment_nrc_title %>%
        y = "Count") +
   theme_minimal()
 
-wordcloud2(top_15_words_title, size = 0.5, color = "random-light", backgroundColor = "black")
+wordcloud2(top_15_words_title, size = 0.5, color = "random-light", backgroundColor = "white")
 
 ############################################################################################################################
 ############################################################################################################################
@@ -471,7 +474,7 @@ top_15_bigrams_CombinedText%>%
 
 #bigram net
 biwords_df_combined <- tesla_posts_combined %>% select(CombinedText) %>% unnest_tokens(output = bigram, input = CombinedText, token = "ngrams", n = 2)
-
+                                                                          
 bigram_net_combined <- biwords_df_combined %>%
   separate(bigram,c( "word1", "word2"), sep = " ") %>%
   filter(!is.na(word1) & !is.na(word2)) %>% # Filtra bigrammi con NA
@@ -481,7 +484,7 @@ bigram_net_combined <- biwords_df_combined %>%
 bigram_net_combined
 
 bigram_igraph_combined <- bigram_net_combined %>%
-  filter(n>75) %>% 
+  filter(n>40) %>% 
   graph_from_data_frame()
 bigram_igraph_combined
 
@@ -490,8 +493,8 @@ set.seed(7)
 biplot_text_a_combined = ggraph(bigram_igraph_combined, layout = "fr") +
   geom_edge_link(aes(edge_alpha = n), show.legend = FALSE,
                  arrow = a_combined, end_cap = circle(.07, 'inches')) +
-  geom_node_point(color = "#F06869", size = 5) +
-  geom_node_text(aes(label = name), vjust = 1, hjust = 1, size = 3) +
+  geom_node_point(color = "blue", size = 5) +
+  geom_node_text(aes(label = name), vjust = 1.5, hjust = 1.5, size = 3) +
   theme_void()
 
 biplot_text_a_combined
@@ -547,7 +550,7 @@ sentiment_nrc_CombinedText %>%
        y = "Count") +
   theme_minimal()
 
-wordcloud2(top_15_words_CombinedText, size = 0.5, color = "random-light", backgroundColor = "black")
+wordcloud2(top_15_words_CombinedText, size = 0.5, color = "random-dark", backgroundColor = "white")
 
 ############################################################################################################################
 ############################################################################################################################
@@ -600,14 +603,15 @@ tesla_posts_temporal <- tesla_posts_temporal %>%
 sentiment_over_time <- tesla_posts_temporal %>%
   group_by(Date) %>%
   summarise(avg_positive = mean(sentiment_positive, na.rm = TRUE),
-            avg_negative = mean(sentiment_negative, na.rm = TRUE))
+    avg_negative = mean(sentiment_negative, na.rm = TRUE))
 
 # Creazione del grafico
 ggplot(sentiment_over_time) +
   geom_line(aes(x = Date, y = avg_positive, color = "Positive Sentiment"), size = 1) +
   geom_line(aes(x = Date, y = avg_negative, color = "Negative Sentiment"), size = 1) +
   scale_color_manual(values = c("Positive Sentiment" = "blue", "Negative Sentiment" = "red")) +
-  labs(title = "Andamento temporale del Sentiment positivo e negativo",
-       x = "Data", y = "Sentiment Medio", color = "Tipologia di Sentiment") + theme_minimal()
+  #coord_cartesian(ylim = c(0, 20)) + 
+  labs(title = "Temporal Trend of Positive and Negative Sentiment",
+    x = "Date", y = "Average Sentiment", color = "" ) + theme_minimal()
 
 #end
